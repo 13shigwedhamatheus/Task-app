@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flutter Task App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        primaryDark: '#4F4EB8',
+                        background: {
+                            light: '#FFFFFF',
+                            dark: '#181818'
+                        },
+                        surfaceLight: '#F5F5F5',
+                        surfaceDark: '#2A2A2A'
+                    },
+                    boxShadow: {
+                        'elevation': '0 2px 4px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)',
+                        'elevationDark': '0 2px 4px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.12)'
+                    }
+                },
+            }
+        }
+    </script>
+    <style>
+        .floating-action-button {
+            bottom: 24px;
+            right: 24px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .floating-action-button:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.05);
+        }
+        
+        .task-item {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .task-item.completed {
+            text-decoration: line-through;
+            color: #9CA3AF;
+        }
+
+        .dark .task-item.completed {
+            color: #6B7280;
+        }
+
+        .fade-out {
+            animation: fadeOut 0.3s ease-out forwards;
+        }
+        
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #5D5CDE;
+            box-shadow: 0 0 0 2px rgba(93, 92, 222, 0.2);
+        }
+
+        .dark .input-field:focus {
+            box-shadow: 0 0 0 2px rgba(93, 92, 222, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark min-h-screen text-gray-800 dark:text-gray-200 transition-colors duration-200">
+    <div class="max-w-md mx-auto p-4 pb-24 relative min-h-screen">
+        <!-- App Bar -->
+        <div class="flex justify-between items-center py-4 mb-6">
+            <h1 class="text-2xl font-semibold text-primary dark:text-primary">Flutter Tasks</h1>
+            <div class="flex space-x-2">
+                <button id="filter-button" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter Dropdown -->
+        <div id="filter-dropdown" class="hidden absolute right-4 top-16 bg-white dark:bg-surfaceDark rounded-md shadow-elevation dark:shadow-elevationDark z-10">
+            <div class="p-2">
+                <button data-filter="all" class="filter-option w-full text-left px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">All</button>
+                <button data-filter="active" class="filter-option w-full text-left px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Active</button>
+                <button data-filter="completed" class="filter-option w-full text-left px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Completed</button>
+            </div>
+        </div>
+
+        <!-- Task Input -->
+        <div class="mb-6 relative">
+            <input id="task-input" class="input-field w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-surfaceDark shadow-sm text-base transition-all duration-200" placeholder="Add a new task...">
+            <button id="add-task-button" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-primary hover:text-primaryDark transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Task Status -->
+        <div class="flex justify-between items-center mb-4 text-sm text-gray-500 dark:text-gray-400">
+            <div id="task-count">0 tasks</div>
+            <button id="clear-completed" class="text-primary hover:text-primaryDark transition-colors">Clear completed</button>
+        </div>
+
+        <!-- Task List -->
+        <div id="task-list" class="space-y-2 mb-20">
+            <!-- Tasks will be added here by JavaScript -->
+        </div>
+
+        <!-- Floating Action Button -->
+        <button id="fab" class="floating-action-button fixed rounded-full bg-primary hover:bg-primaryDark text-white p-4 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+        </button>
+    </div>
+
+    <script>
+        // Initialize dark mode based on user preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        // Task management
+        let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+        let currentFilter = 'all';
+
+        // DOM elements
+        const taskInput = document.getElementById('task-input');
+        const addTaskButton = document.getElementById('add-task-button');
+        const fab = document.getElementById('fab');
+        const taskList = document.getElementById('task-list');
+        const taskCount = document.getElementById('task-count');
+        const clearCompletedButton = document.getElementById('clear-completed');
+        const filterButton = document.getElementById('filter-button');
+        const filterDropdown = document.getElementById('filter-dropdown');
+        const filterOptions = document.querySelectorAll('.filter-option');
+
+        // Function to add a new task
+        function addTask(text) {
+            if (!text) return;
+            
+            const newTask = {
+                id: Date.now().toString(),
+                text: text,
+                completed: false,
+                createdAt: new Date()
+            };
+            
+            tasks.push(newTask);
+            saveTasks();
+            renderTasks();
+            taskInput.value = '';
+        }
+
+        // Function to toggle task completion
+        function toggleTask(id) {
+            tasks = tasks.map(task => {
+                if (task.id === id) {
+                    return {...task, completed: !task.completed};
+                }
+                return task;
+            });
+            saveTasks();
+            renderTasks();
+        }
+
+        // Function to delete a task
+        function deleteTask(id) {
+            const taskElement = document.getElementById(`task-${id}`);
+            taskElement.classList.add('fade-out');
+            
+            setTimeout(() => {
+                tasks = tasks.filter(task => task.id !== id);
+                saveTasks();
+                renderTasks();
+            }, 300); // Match the duration of the fade-out animation
+        }
+
+        // Function to clear completed tasks
+        function clearCompleted() {
+            tasks = tasks.filter(task => !task.completed);
+            saveTasks();
+            renderTasks();
+        }
+
+        // Function to filter tasks
+        function filterTasks(filter) {
+            currentFilter = filter;
+            renderTasks();
+            filterDropdown.classList.add('hidden');
+        }
+
+        // Function to save tasks to localStorage
+        function saveTasks() {
+            try {
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+            } catch (e) {
+                console.error('Could not save to localStorage:', e);
+            }
+        }
+
+        // Function to render tasks
+        function renderTasks() {
+            // Filter tasks based on current filter
+            let filteredTasks = tasks;
+            if (currentFilter === 'active') {
+                filteredTasks = tasks.filter(task => !task.completed);
+            } else if (currentFilter === 'completed') {
+                filteredTasks = tasks.filter(task => task.completed);
+            }
+            
+            // Sort by creation date (newest first)
+            filteredTasks = filteredTasks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            
+            // Clear current list
+            taskList.innerHTML = '';
+            
+            // Render each task
+            filteredTasks.forEach(task => {
+                const taskElement = document.createElement('div');
+                taskElement.id = `task-${task.id}`;
+                taskElement.className = 'task-item p-3 bg-white dark:bg-surfaceDark rounded-lg shadow-elevation dark:shadow-elevationDark flex items-center justify-between';
+                
+                // Create checkbox with custom styling
+                const checkboxContainer = document.createElement('div');
+                checkboxContainer.className = 'flex items-center';
+                
+                const checkbox = document.createElement('div');
+                checkbox.className = `w-5 h-5 rounded-full border-2 mr-3 flex items-center justify-center cursor-pointer transition-colors ${task.completed ? 'border-primary bg-primary' : 'border-gray-400 dark:border-gray-600'}`;
+                checkbox.innerHTML = task.completed ? '<svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>' : '';
+                checkbox.addEventListener('click', () => toggleTask(task.id));
+                
+                const taskText = document.createElement('span');
+                taskText.className = task.completed ? 'completed transition-all' : 'transition-all';
+                taskText.textContent = task.text;
+                
+                checkboxContainer.appendChild(checkbox);
+                checkboxContainer.appendChild(taskText);
+                
+                // Create delete button
+                const deleteButton = document.createElement('button');
+                deleteButton.className = 'text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 transition-colors';
+                deleteButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>';
+                deleteButton.addEventListener('click', () => deleteTask(task.id));
+                
+                taskElement.appendChild(checkboxContainer);
+                taskElement.appendChild(deleteButton);
+                taskList.appendChild(taskElement);
+            });
+            
+            // Update task count
+            const activeCount = tasks.filter(task => !task.completed).length;
+            taskCount.textContent = `${activeCount} ${activeCount === 1 ? 'task' : 'tasks'} remaining`;
+        }
+
+        // Event listeners
+        addTaskButton.addEventListener('click', () => {
+            addTask(taskInput.value.trim());
+        });
+        
+        fab.addEventListener('click', () => {
+            taskInput.focus();
+        });
+        
+        taskInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                addTask(taskInput.value.trim());
+            }
+        });
+        
+        clearCompletedButton.addEventListener('click', clearCompleted);
+        
+        filterButton.addEventListener('click', () => {
+            filterDropdown.classList.toggle('hidden');
+        });
+        
+        filterOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                filterTasks(option.dataset.filter);
+            });
+        });
+        
+        // Close filter dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!filterButton.contains(e.target) && !filterDropdown.contains(e.target)) {
+                filterDropdown.classList.add('hidden');
+            }
+        });
+        
+        // Initial render
+        renderTasks();
+    </script>
+</body>
+</html>
